@@ -1,0 +1,3101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smartphone Interface</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #000;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+
+        .phone-container {
+            width: 320px;
+            height: 640px;
+            background: #000;
+            border-radius: 35px;
+            padding: 6px;
+            box-shadow: 0 0 40px rgba(255, 255, 255, 0.1);
+            position: relative;
+        }
+
+        .phone-screen {
+            width: 100%;
+            height: 100%;
+            border-radius: 28px;
+            overflow: hidden;
+            position: relative;
+            background: url('telefonwp.png') center/cover;
+        }
+
+        .screen-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.3);
+        }
+
+        /* Lock Screen */
+        .lock-screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: 50px 25px 30px;
+            color: white;
+            z-index: 10;
+            transition: transform 0.5s ease;
+        }
+
+        .lock-screen.hidden {
+            transform: translateY(-100%);
+        }
+
+        .top-message {
+            position: absolute;
+            top: 15px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 13px;
+            color: rgba(255, 255, 255, 0.8);
+            font-weight: 400;
+            text-align: center;
+            z-index: 20;
+        }
+
+        .time-display {
+            text-align: center;
+            margin-top: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .time {
+            font-size: 56px;
+            font-weight: 100;
+            line-height: 1;
+            margin-bottom: 5px;
+            letter-spacing: -1px;
+        }
+
+        .date {
+            font-size: 14px;
+            opacity: 0.9;
+            font-weight: 400;
+            margin-bottom: 8px;
+        }
+
+        .passcode-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+            align-items: center;
+            padding-bottom: 70px;
+        }
+
+        .passcode-title {
+            font-size: 15px;
+            margin-bottom: 20px;
+            opacity: 0.9;
+            font-weight: 400;
+        }
+
+        .passcode-dots {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 30px;
+            justify-content: center;
+        }
+
+        .dot {
+            width: 12px;
+            height: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.6);
+            border-radius: 50%;
+            transition: all 0.3s ease;
+        }
+
+        .dot.filled {
+            background: white;
+            border-color: white;
+        }
+
+        .keypad {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+            width: 100%;
+            max-width: 240px;
+            justify-items: center;
+        }
+
+        .key {
+            width: 65px;
+            height: 65px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.15);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 26px;
+            color: white;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            backdrop-filter: blur(10px);
+            font-weight: 300;
+        }
+
+        .key:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: scale(1.05);
+        }
+
+        .key:active {
+            transform: scale(0.95);
+        }
+
+        .key.delete {
+            font-size: 18px;
+            font-weight: 300;
+        }
+
+        .key.empty {
+            background: transparent;
+            border: none;
+            cursor: default;
+        }
+
+        .key.empty:hover {
+            background: transparent;
+            transform: none;
+        }
+
+        /* Fix for key 2 clicking issue */
+        .key[data-key="2"] {
+            position: relative;
+            z-index: 100;
+            pointer-events: auto !important;
+        }
+
+
+
+        .error-message {
+            position: absolute;
+            top: 80px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(255, 0, 0, 0.9);
+            color: white;
+            padding: 12px 25px;
+            border-radius: 8px;
+            font-size: 14px;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+        }
+
+        .error-message.show {
+            opacity: 1;
+        }
+
+        .shake {
+            animation: shake 0.5s ease-in-out;
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-10px); }
+            75% { transform: translateX(10px); }
+        }
+
+
+
+        /* Home Screen */
+        .home-screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            color: white;
+            z-index: 5;
+            opacity: 0;
+            transform: scale(0.8);
+            transition: all 0.5s ease;
+            padding: 40px 25px 25px;
+        }
+
+        .home-screen.active {
+            opacity: 1;
+            transform: scale(1);
+        }
+
+        .status-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 10px;
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 40px;
+        }
+
+        .time-home {
+            font-weight: 700;
+        }
+
+        .battery {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .app-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 20px;
+            margin-bottom: auto;
+            padding: 30px 0;
+        }
+
+        .app-icon {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            cursor: pointer;
+            transition: transform 0.2s ease;
+        }
+
+        .app-icon:hover {
+            transform: scale(1.1);
+        }
+
+        .app-icon:active {
+            transform: scale(0.95);
+        }
+
+        .icon {
+            width: 50px;
+            height: 50px;
+            border-radius: 12px;
+            margin-bottom: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.2), rgba(255, 255, 255, 0.1));
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+        }
+
+        .app-name {
+            font-size: 12px;
+            text-align: center;
+            opacity: 0.9;
+            text-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
+        }
+
+        .dock {
+            position: absolute;
+            bottom: 25px;
+            left: 25px;
+            right: 25px;
+            height: 65px;
+            background: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(20px);
+            border-radius: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-around;
+            padding: 0 15px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .dock-icon {
+            width: 45px;
+            height: 45px;
+            border-radius: 11px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.25), rgba(255, 255, 255, 0.15));
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            cursor: pointer;
+            transition: all 0.2s ease;
+            color: white;
+        }
+
+        .dock-icon:hover {
+            transform: scale(1.1);
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.35), rgba(255, 255, 255, 0.25));
+        }
+
+        /* Color themes for different apps */
+        .gallery { background: linear-gradient(135deg, #ff6b6b, #ff5252); }
+        .voice { background: linear-gradient(135deg, #4ecdc4, #26a69a); }
+        .notes { background: linear-gradient(135deg, #ffd93d, #ffc107); }
+        .social { background: linear-gradient(135deg, #6c5ce7, #5f3dc4); }
+        
+        .phone { background: linear-gradient(135deg, #00c851, #00a85c); }
+        .browser { background: linear-gradient(135deg, #2196f3, #1976d2); }
+        .sms { background: linear-gradient(135deg, #00c851, #00a85c); }
+
+        .home-indicator {
+            position: absolute;
+            bottom: 8px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 134px;
+            height: 5px;
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: 3px;
+        }
+
+        /* App Screens */
+        .app-screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.3);
+            backdrop-filter: blur(15px);
+            color: white;
+            z-index: 15;
+            opacity: 0;
+            transform: translateY(100%);
+            transition: all 0.4s ease;
+            padding: 40px 25px 25px;
+            overflow: hidden;
+        }
+
+        .app-screen.active {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+                 .app-header {
+             display: flex;
+             align-items: center;
+             justify-content: space-between;
+             padding: 6px 15px;
+             border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+             margin-bottom: 10px;
+             backdrop-filter: blur(20px);
+             background: rgba(255, 255, 255, 0.03);
+         }
+
+         .back-btn {
+             background: none;
+             border: none;
+             color: rgba(255, 255, 255, 0.8);
+             font-size: 28px;
+             cursor: pointer;
+             padding: 8px 12px 8px 0;
+             margin-right: 0;
+             transition: all 0.2s ease;
+             font-weight: 300;
+             line-height: 1;
+         }
+
+         .back-btn:hover {
+             color: white;
+             transform: translateX(-3px);
+         }
+
+         .app-header h2 {
+             font-size: 15px;
+             font-weight: 500;
+             margin: 0;
+             color: rgba(255, 255, 255, 0.95);
+         }
+
+        /* Notes App Styles */
+        .notes-view {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            transition: transform 0.3s ease;
+            transform: translateX(0);
+            overflow-y: auto;
+            padding-bottom: 20px;
+        }
+
+        .note-detail-view {
+            transform: translateX(100%);
+            overflow-y: auto;
+        }
+
+        .note-detail-view.active {
+            transform: translateX(0);
+        }
+
+        .notes-view.slide-left {
+            transform: translateX(-100%);
+        }
+
+        .notes-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            padding: 0 5px;
+            min-height: 100vh;
+        }
+
+        .note-item {
+            background: rgba(255, 255, 255, 0.15);
+            border-radius: 12px;
+            padding: 15px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(10px);
+        }
+
+        .note-item:hover {
+            background: rgba(255, 255, 255, 0.25);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+        }
+
+        .note-item:active {
+            transform: translateY(0);
+        }
+
+        .note-item-title {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: white;
+            line-height: 1.3;
+        }
+
+        .note-item-preview {
+            font-size: 14px;
+            color: rgba(255, 255, 255, 0.7);
+            line-height: 1.4;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+
+
+        /* Note Detail Styles */
+        .note-content {
+            line-height: 1.6;
+            font-size: 16px;
+            color: rgba(255, 255, 255, 0.9);
+            white-space: pre-wrap;
+            padding: 20px 25px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 12px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            margin: 0 5px;
+            overflow-y: auto;
+            max-height: calc(100vh - 200px);
+        }
+
+        /* Gallery App Styles */
+        .gallery-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 3px;
+            padding: 5px;
+            overflow-y: auto;
+            height: calc(100vh - 200px);
+        }
+
+        .gallery-item {
+            aspect-ratio: 1;
+            overflow: hidden;
+            border-radius: 8px;
+            cursor: pointer;
+            position: relative;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .gallery-item:hover {
+            transform: scale(1.05);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.5);
+            z-index: 10;
+        }
+
+        .gallery-thumbnail {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: transform 0.2s ease;
+        }
+
+        .gallery-item:active .gallery-thumbnail {
+            transform: scale(0.95);
+        }
+
+        /* Gallery Fullscreen */
+        .gallery-fullscreen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.95);
+            backdrop-filter: blur(20px);
+            z-index: 20;
+            opacity: 0;
+            transform: scale(0.8);
+            transition: all 0.4s ease;
+            pointer-events: none;
+        }
+
+        .gallery-fullscreen.active {
+            opacity: 1;
+            transform: scale(1);
+            pointer-events: auto;
+        }
+
+                 .fullscreen-header {
+             display: flex;
+             justify-content: space-between;
+             align-items: center;
+             padding: 6px 15px;
+             background: rgba(255, 255, 255, 0.03);
+             backdrop-filter: blur(20px);
+             border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+             color: white;
+         }
+
+                 .photo-counter {
+             font-size: 12px;
+             color: rgba(255, 255, 255, 0.8);
+             font-weight: 400;
+         }
+
+                 .fullscreen-content {
+             position: relative;
+             height: calc(100% - 50px);
+             display: flex;
+             align-items: center;
+             justify-content: center;
+             padding: 0 60px;
+         }
+
+        .fullscreen-image {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+            border-radius: 10px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+        }
+
+        .nav-btn {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            color: white;
+            font-size: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            z-index: 10;
+        }
+
+        .nav-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: translateY(-50%) scale(1.1);
+        }
+
+        .nav-btn:active {
+            transform: translateY(-50%) scale(0.95);
+        }
+
+        .prev-btn {
+            left: 15px;
+        }
+
+        .next-btn {
+            right: 15px;
+        }
+
+        .nav-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+                 .nav-btn:disabled:hover {
+             transform: translateY(-50%);
+             background: rgba(255, 255, 255, 0.2);
+         }
+
+         /* Social Media App Styles */
+         .social-header {
+             display: flex;
+             justify-content: space-between;
+             align-items: center;
+             padding: 8px 20px;
+             border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+             background: rgba(255, 255, 255, 0.03);
+             backdrop-filter: blur(20px);
+             margin-bottom: 8px;
+         }
+
+         .social-header h2 {
+             font-size: 17px;
+             font-weight: 500;
+             color: rgba(255, 255, 255, 0.95);
+         }
+
+         .social-icons {
+             display: flex;
+             gap: 12px;
+         }
+
+         .icon-btn {
+             font-size: 18px;
+             cursor: pointer;
+             transition: all 0.2s ease;
+             color: rgba(255, 255, 255, 0.8);
+         }
+
+         .icon-btn:hover {
+             transform: scale(1.1);
+             color: white;
+         }
+
+         /* Stories Section */
+         .stories-container {
+             padding: 10px 0;
+             border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+             margin-bottom: 10px;
+         }
+
+         .stories-scroll {
+             display: flex;
+             gap: 15px;
+             padding: 0 7px;
+             overflow-x: auto;
+             scrollbar-width: none;
+             -ms-overflow-style: none;
+         }
+
+         .stories-scroll::-webkit-scrollbar {
+             display: none;
+         }
+
+         .story-item {
+             display: flex;
+             flex-direction: column;
+             align-items: center;
+             min-width: 70px;
+             cursor: pointer;
+         }
+
+         .story-avatar {
+             width: 60px;
+             height: 60px;
+             border-radius: 50%;
+             background: linear-gradient(45deg, #f09433, #e6683c, #dc2743, #cc2366, #bc1888);
+             padding: 3px;
+             margin-bottom: 5px;
+         }
+
+         .story-avatar-inner {
+             width: 100%;
+             height: 100%;
+             border-radius: 50%;
+             background: #333;
+             display: flex;
+             align-items: center;
+             justify-content: center;
+             font-size: 24px;
+             border: 2px solid #000;
+             overflow: hidden;
+         }
+
+         .story-avatar-inner img {
+             width: 100%;
+             height: 100%;
+             object-fit: cover;
+             border-radius: 50%;
+         }
+
+         .story-username {
+             font-size: 12px;
+             color: rgba(255, 255, 255, 0.8);
+             text-align: center;
+             max-width: 70px;
+             overflow: hidden;
+             text-overflow: ellipsis;
+             white-space: nowrap;
+         }
+
+         /* Home Content */
+         .home-content {
+             height: calc(100% - 60px);
+             overflow-y: auto;
+         }
+
+         /* Posts Feed */
+         .posts-feed {
+             height: calc(100% - 130px);
+             overflow-y: auto;
+             padding-bottom: 20px;
+         }
+
+         .post {
+             background: rgba(255, 255, 255, 0.05);
+             border-radius: 12px;
+             margin: 10px 7px;
+             backdrop-filter: blur(10px);
+             border: 1px solid rgba(255, 255, 255, 0.1);
+         }
+
+         .post-header {
+             display: flex;
+             align-items: center;
+             padding: 15px;
+             gap: 12px;
+         }
+
+         .post-avatar {
+             width: 40px;
+             height: 40px;
+             border-radius: 50%;
+             background: #333;
+             display: flex;
+             align-items: center;
+             justify-content: center;
+             font-size: 18px;
+             object-fit: cover;
+             overflow: hidden;
+         }
+
+         .post-avatar img {
+             width: 100%;
+             height: 100%;
+             object-fit: cover;
+             border-radius: 50%;
+         }
+
+         .post-user-info {
+             flex: 1;
+         }
+
+         .post-username {
+             font-size: 14px;
+             font-weight: 600;
+             color: white;
+         }
+
+         .post-menu {
+             font-size: 18px;
+             cursor: pointer;
+             padding: 5px;
+         }
+
+         .post-image {
+             width: 100%;
+             aspect-ratio: 1;
+             object-fit: cover;
+             border-radius: 0;
+         }
+
+         .post-actions {
+             display: flex;
+             justify-content: space-between;
+             align-items: center;
+             padding: 15px;
+         }
+
+         .post-actions-left {
+             display: flex;
+             gap: 15px;
+         }
+
+         .action-btn {
+             font-size: 20px;
+             cursor: pointer;
+             transition: all 0.2s ease;
+             color: rgba(255, 255, 255, 0.8);
+         }
+
+         .action-btn:hover {
+             transform: scale(1.2);
+             color: white;
+         }
+
+         .action-btn.liked {
+             color: #ff3040;
+         }
+
+         .post-likes {
+             padding: 0 15px 10px;
+             font-size: 14px;
+             font-weight: 600;
+             color: white;
+         }
+
+         .post-caption {
+             padding: 0 15px 15px;
+             font-size: 14px;
+             color: rgba(255, 255, 255, 0.9);
+             line-height: 1.4;
+         }
+
+         .post-caption-username {
+             font-weight: 600;
+             color: white;
+             margin-right: 8px;
+         }
+
+         .post-comments {
+             padding: 0 15px 15px;
+             font-size: 14px;
+             color: rgba(255, 255, 255, 0.9);
+             line-height: 1.4;
+         }
+
+         .post-comment {
+             margin-bottom: 8px;
+         }
+
+         .post-comment-username {
+             font-weight: 600;
+             color: white;
+             margin-right: 8px;
+         }
+
+         /* Story Modal */
+         .story-modal {
+             position: absolute;
+             top: 0;
+             left: 0;
+             right: 0;
+             bottom: 0;
+             background: rgba(0, 0, 0, 0.95);
+             backdrop-filter: blur(20px);
+             z-index: 2000;
+             opacity: 0;
+             transform: scale(0.8);
+             transition: all 0.4s ease;
+             pointer-events: none;
+             display: flex;
+             flex-direction: column;
+         }
+
+         .story-modal.active {
+             opacity: 1;
+             transform: scale(1);
+             pointer-events: auto;
+         }
+
+         .story-header {
+             display: flex;
+             align-items: center;
+             padding: 15px 20px;
+             gap: 12px;
+             position: relative;
+             z-index: 10;
+         }
+
+         .story-progress-bar {
+             position: absolute;
+             top: 8px;
+             left: 20px;
+             right: 20px;
+             height: 2px;
+             background: rgba(255, 255, 255, 0.3);
+             border-radius: 1px;
+         }
+
+         .story-progress-fill {
+             height: 100%;
+             background: white;
+             border-radius: 1px;
+             width: 0%;
+             transition: width 0.1s linear;
+         }
+
+         .story-avatar-small {
+             width: 32px;
+             height: 32px;
+             border-radius: 50%;
+             background: #333;
+             display: flex;
+             align-items: center;
+             justify-content: center;
+             font-size: 16px;
+             overflow: hidden;
+         }
+
+         .story-avatar-small img {
+             width: 100%;
+             height: 100%;
+             object-fit: cover;
+             border-radius: 50%;
+         }
+
+         .story-username-header {
+             color: white;
+             font-size: 14px;
+             font-weight: 600;
+         }
+
+         .story-content {
+             flex: 1;
+             display: flex;
+             align-items: center;
+             justify-content: center;
+             position: relative;
+         }
+
+         .story-image {
+             max-width: 100%;
+             max-height: 100%;
+             object-fit: contain;
+         }
+
+         .story-close-btn {
+             position: absolute;
+             top: 15px;
+             right: 20px;
+             background: none;
+             border: none;
+             color: white;
+             font-size: 24px;
+             cursor: pointer;
+             z-index: 15;
+         }
+
+         /* Social Bottom Navigation */
+         .social-bottom-nav {
+             position: absolute;
+             bottom: 0;
+             left: 0;
+             right: 0;
+             height: 60px;
+             background: rgba(255, 255, 255, 0.95);
+             backdrop-filter: blur(20px);
+             border-top: 1px solid rgba(0, 0, 0, 0.1);
+             display: flex;
+             align-items: center;
+             justify-content: space-around;
+             padding: 0 10px;
+             z-index: 1000;
+         }
+
+         .nav-item {
+             display: flex;
+             flex-direction: column;
+             align-items: center;
+             cursor: pointer;
+             padding: 8px 12px;
+             border-radius: 8px;
+             transition: all 0.2s ease;
+             min-width: 50px;
+         }
+
+         .nav-item:hover {
+             background: rgba(0, 0, 0, 0.1);
+             transform: translateY(-2px);
+         }
+
+         .nav-item.active {
+             color: #0095f6;
+         }
+
+         .nav-item.active .nav-icon {
+             filter: brightness(1.5);
+         }
+
+         .nav-icon {
+             font-size: 20px;
+             margin-bottom: 2px;
+             transition: all 0.2s ease;
+             color: rgba(0, 0, 0, 0.8);
+         }
+
+         .nav-label {
+             font-size: 10px;
+             color: rgba(0, 0, 0, 0.8);
+             font-weight: 400;
+             text-align: center;
+         }
+
+         .nav-item.active .nav-label {
+             color: #0095f6;
+             font-weight: 600;
+         }
+
+         .nav-item.active .nav-icon {
+             color: #0095f6;
+         }
+
+         /* Profile View Styles */
+         .profile-view {
+             display: none;
+             height: calc(100% - 60px);
+             overflow-y: auto;
+             padding: 20px 15px;
+             padding-bottom: 20px;
+         }
+
+         .profile-view.active {
+             display: block;
+         }
+
+         .profile-header {
+             display: flex;
+             align-items: flex-start;
+             gap: 20px;
+             margin-bottom: 20px;
+         }
+
+         .profile-avatar-large {
+             width: 80px;
+             height: 80px;
+             border-radius: 50%;
+             background: linear-gradient(45deg, #f09433, #e6683c, #dc2743, #cc2366, #bc1888);
+             display: flex;
+             align-items: center;
+             justify-content: center;
+             font-size: 36px;
+             flex-shrink: 0;
+             padding: 3px;
+             cursor: pointer;
+             transition: transform 0.2s ease;
+         }
+
+         .profile-avatar-large:hover {
+             transform: scale(1.05);
+         }
+
+         .profile-avatar-inner {
+             width: 100%;
+             height: 100%;
+             border-radius: 50%;
+             background: #000;
+             border: 2px solid #000;
+             overflow: hidden;
+             display: flex;
+             align-items: center;
+             justify-content: center;
+         }
+
+         .profile-avatar-inner img {
+             width: 100%;
+             height: 100%;
+             object-fit: cover;
+             border-radius: 50%;
+         }
+
+         .profile-info {
+             flex: 1;
+         }
+
+         .profile-username {
+             font-size: 20px;
+             font-weight: 600;
+             color: white;
+             margin-bottom: 8px;
+         }
+
+         .profile-bio {
+             font-size: 14px;
+             color: rgba(255, 255, 255, 0.8);
+             line-height: 1.4;
+         }
+
+         .profile-stats {
+             display: flex;
+             justify-content: space-around;
+             padding: 15px 0;
+             border-top: 1px solid rgba(255, 255, 255, 0.1);
+             border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+             margin-bottom: 20px;
+         }
+
+         .stat-item {
+             text-align: center;
+         }
+
+         .stat-number {
+             font-size: 18px;
+             font-weight: 700;
+             color: white;
+             margin-bottom: 2px;
+         }
+
+         .stat-label {
+             font-size: 13px;
+             color: rgba(255, 255, 255, 0.7);
+         }
+
+         .profile-actions {
+             display: flex;
+             gap: 10px;
+             margin-bottom: 25px;
+         }
+
+         .profile-btn {
+             flex: 1;
+             padding: 8px 15px;
+             background: rgba(255, 255, 255, 0.1);
+             border: 1px solid rgba(255, 255, 255, 0.2);
+             border-radius: 8px;
+             color: white;
+             font-size: 14px;
+             font-weight: 600;
+             cursor: pointer;
+             transition: all 0.2s ease;
+         }
+
+         .profile-btn:hover {
+             background: rgba(255, 255, 255, 0.2);
+         }
+
+
+
+         .profile-posts-grid {
+             display: grid;
+             grid-template-columns: repeat(3, 1fr);
+             gap: 2px;
+             max-height: none;
+         }
+
+         .profile-post-item {
+             aspect-ratio: 1;
+             background: #333;
+             display: flex;
+             align-items: center;
+             justify-content: center;
+             font-size: 24px;
+             color: rgba(255, 255, 255, 0.5);
+             cursor: pointer;
+             transition: opacity 0.2s ease;
+         }
+
+         .profile-post-item:hover {
+             opacity: 0.8;
+         }
+
+         /* Hide/Show content based on active view */
+         .home-content {
+             display: block;
+         }
+
+         .home-content.hidden {
+             display: none;
+         }
+
+         /* Post Detail Modal */
+         .post-detail-modal {
+             position: absolute;
+             top: 0;
+             left: 0;
+             right: 0;
+             bottom: 0;
+             background: rgba(0, 0, 0, 0.95);
+             backdrop-filter: blur(20px);
+             z-index: 25;
+             opacity: 0;
+             transform: translateY(100%);
+             transition: all 0.4s ease;
+             pointer-events: none;
+         }
+
+         .post-detail-modal.active {
+             opacity: 1;
+             transform: translateY(0);
+             pointer-events: auto;
+         }
+
+         .post-detail-header {
+             display: flex;
+             align-items: center;
+             padding: 8px 20px;
+             border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+             background: rgba(255, 255, 255, 0.03);
+             backdrop-filter: blur(20px);
+         }
+
+         .post-detail-content {
+             height: calc(100% - 50px);
+             overflow-y: auto;
+             padding: 0;
+         }
+
+         .post-detail-image-container {
+             width: 100%;
+             max-height: 400px;
+             display: flex;
+             justify-content: center;
+             align-items: center;
+             background: #000;
+         }
+
+         .post-detail-image {
+             width: 100%;
+             height: auto;
+             max-height: 400px;
+             object-fit: contain;
+         }
+
+         .post-detail-info {
+             padding: 15px 20px;
+         }
+
+         .post-detail-user {
+             display: flex;
+             align-items: center;
+             gap: 12px;
+             margin-bottom: 15px;
+         }
+
+         .post-detail-avatar {
+             width: 32px;
+             height: 32px;
+             border-radius: 50%;
+             background: #333;
+             display: flex;
+             align-items: center;
+             justify-content: center;
+             font-size: 16px;
+             overflow: hidden;
+         }
+
+         .post-detail-avatar img {
+             width: 100%;
+             height: 100%;
+             object-fit: cover;
+             border-radius: 50%;
+         }
+
+         .post-detail-username {
+             font-weight: 600;
+             color: white;
+             font-size: 14px;
+         }
+
+         .post-detail-actions {
+             display: flex;
+             justify-content: space-between;
+             align-items: center;
+             margin-bottom: 10px;
+         }
+
+         .post-detail-actions-left {
+             display: flex;
+             gap: 15px;
+         }
+
+         .post-detail-likes {
+             font-size: 14px;
+             font-weight: 600;
+             color: white;
+             margin-bottom: 8px;
+         }
+
+         .post-detail-caption {
+             font-size: 14px;
+             color: rgba(255, 255, 255, 0.9);
+             line-height: 1.4;
+             margin-bottom: 8px;
+         }
+
+         .post-detail-caption-username {
+             font-weight: 600;
+             color: white;
+             margin-right: 8px;
+         }
+
+         .post-detail-time {
+             font-size: 12px;
+             color: rgba(255, 255, 255, 0.6);
+             text-transform: uppercase;
+         }
+
+         /* Audio Memos App Styles - Apple Design */
+         .audio-player {
+             padding: 0;
+             height: calc(100% - 50px);
+             display: flex;
+             flex-direction: column;
+             background: transparent;
+         }
+
+         .track-info {
+             text-align: center;
+             padding: 30px 25px 25px;
+             background: transparent;
+         }
+
+         .track-title {
+             font-size: 22px;
+             font-weight: 700;
+             color: white;
+             margin-bottom: 6px;
+             text-overflow: ellipsis;
+             overflow: hidden;
+             white-space: nowrap;
+             letter-spacing: -0.5px;
+         }
+
+         .track-artist {
+             font-size: 16px;
+             color: rgba(255, 255, 255, 0.6);
+             font-weight: 400;
+         }
+
+         .progress-section {
+             padding: 0 25px 20px;
+             background: transparent;
+         }
+
+         .progress-bar-container {
+             position: relative;
+             margin-bottom: 8px;
+         }
+
+         .progress-bar {
+             width: 100%;
+             height: 3px;
+             background: rgba(255, 255, 255, 0.3);
+             border-radius: 1.5px;
+             position: relative;
+             cursor: pointer;
+         }
+
+         .progress-fill {
+             height: 100%;
+             background: white;
+             border-radius: 1.5px;
+             width: 0%;
+             transition: width 0.1s linear;
+         }
+
+         .progress-handle {
+             position: absolute;
+             top: 50%;
+             left: 0%;
+             transform: translate(-50%, -50%);
+             width: 14px;
+             height: 14px;
+             background: white;
+             border-radius: 50%;
+             box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+             cursor: pointer;
+             transition: left 0.1s linear;
+             opacity: 0;
+         }
+
+         .progress-bar:hover .progress-handle {
+             opacity: 1;
+         }
+
+         .time-display {
+             display: flex;
+             justify-content: space-between;
+             font-size: 12px;
+             color: rgba(255, 255, 255, 0.6);
+             font-weight: 500;
+             margin-top: 5px;
+         }
+
+         .controls-volume-section {
+             display: flex;
+             justify-content: center;
+             align-items: center;
+             padding: 20px 25px;
+             background: transparent;
+             position: relative;
+         }
+
+         .audio-controls {
+             display: flex;
+             gap: 30px;
+             align-items: center;
+         }
+
+         .control-btn {
+             background: transparent;
+             border: none;
+             border-radius: 50%;
+             width: 44px;
+             height: 44px;
+             display: flex;
+             align-items: center;
+             justify-content: center;
+             color: white;
+             cursor: pointer;
+             transition: all 0.2s ease;
+             font-size: 20px;
+         }
+
+         .control-btn:hover {
+             transform: scale(1.1);
+             color: rgba(255, 255, 255, 0.8);
+         }
+
+         .control-btn.play-pause {
+             width: 64px;
+             height: 64px;
+             font-size: 24px;
+             background: white;
+             color: black;
+             box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+         }
+
+         .control-btn.play-pause:hover {
+             transform: scale(1.05);
+             background: rgba(255, 255, 255, 0.9);
+         }
+
+         .control-btn:active {
+             transform: scale(0.95);
+         }
+
+         .volume-control {
+             position: absolute;
+             right: 25px;
+             display: flex;
+             flex-direction: column;
+             align-items: center;
+             gap: 8px;
+         }
+
+         .volume-bar {
+             width: 3px;
+             height: 60px;
+             background: rgba(255, 255, 255, 0.3);
+             border-radius: 1.5px;
+             position: relative;
+             cursor: pointer;
+         }
+
+         .volume-fill {
+             position: absolute;
+             bottom: 0;
+             width: 100%;
+             background: white;
+             border-radius: 1.5px;
+             height: 70%;
+             transition: height 0.1s linear;
+         }
+
+         .volume-handle {
+             position: absolute;
+             left: 50%;
+             transform: translate(-50%, -50%);
+             width: 12px;
+             height: 12px;
+             background: white;
+             border-radius: 50%;
+             box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+             cursor: pointer;
+             top: 30%;
+             opacity: 0;
+         }
+
+         .volume-bar:hover .volume-handle {
+             opacity: 1;
+         }
+
+         .volume-icon {
+             font-size: 14px;
+             color: rgba(255, 255, 255, 0.6);
+             margin-top: 5px;
+         }
+
+         .track-list-container {
+             flex: 1;
+             background: transparent;
+             overflow: hidden;
+             padding: 0 25px 25px;
+         }
+
+         .track-list-header {
+             padding: 15px 0 12px;
+             font-size: 17px;
+             font-weight: 700;
+             color: white;
+             background: transparent;
+             border-bottom: 1px solid rgba(255, 255, 255, 0.15);
+             margin-bottom: 8px;
+             letter-spacing: -0.3px;
+         }
+
+         .track-list {
+             height: 180px;
+             overflow-y: auto;
+             padding-right: 5px;
+         }
+
+         .track-list::-webkit-scrollbar {
+             width: 2px;
+         }
+
+         .track-list::-webkit-scrollbar-track {
+             background: rgba(255, 255, 255, 0.1);
+             border-radius: 1px;
+         }
+
+         .track-list::-webkit-scrollbar-thumb {
+             background: rgba(255, 255, 255, 0.4);
+             border-radius: 1px;
+         }
+
+         .track-item {
+             display: flex;
+             justify-content: space-between;
+             align-items: center;
+             padding: 10px 0;
+             cursor: pointer;
+             transition: all 0.2s ease;
+             border-radius: 6px;
+         }
+
+         .track-item:hover {
+             background: rgba(255, 255, 255, 0.08);
+             padding-left: 8px;
+             padding-right: 8px;
+         }
+
+         .track-item.active {
+             background: rgba(255, 255, 255, 0.12);
+             padding-left: 8px;
+             padding-right: 8px;
+         }
+
+         .track-item.playing .track-name {
+             color: white;
+         }
+
+         .track-name {
+             font-size: 15px;
+             color: rgba(255, 255, 255, 0.9);
+             font-weight: 500;
+             text-overflow: ellipsis;
+             overflow: hidden;
+             white-space: nowrap;
+             flex: 1;
+             margin-right: 15px;
+             letter-spacing: -0.2px;
+         }
+
+         .track-duration {
+             font-size: 13px;
+             color: rgba(255, 255, 255, 0.5);
+             font-weight: 400;
+             flex-shrink: 0;
+         }
+
+         .track-item.active .track-name {
+             color: white;
+             font-weight: 600;
+         }
+
+         .track-item.playing .track-name::after {
+             content: " ♪";
+             color: white;
+             animation: musicNote 1.5s infinite;
+             margin-left: 5px;
+         }
+
+         @keyframes musicNote {
+             0%, 100% { opacity: 1; transform: scale(1); }
+             50% { opacity: 0.6; transform: scale(1.1); }
+         }
+    </style>
+</head>
+<body>
+    <div class="phone-container">
+        <div class="phone-screen">
+            <div class="screen-overlay"></div>
+            
+            <!-- Lock Screen -->
+            <div class="lock-screen" id="lockScreen">
+                <div class="top-message">Find the key in the brightest day.</div>
+                
+                <div class="time-display">
+                    <div class="time" id="timeDisplay">12:34</div>
+                    <div class="date" id="dateDisplay">Wednesday, December 18</div>
+                </div>
+                
+                <div class="passcode-container">
+                    <div class="passcode-title">Enter Passcode</div>
+                    <div class="passcode-dots">
+                        <div class="dot" id="dot1"></div>
+                        <div class="dot" id="dot2"></div>
+                        <div class="dot" id="dot3"></div>
+                        <div class="dot" id="dot4"></div>
+                    </div>
+                    
+                    <div class="keypad">
+                        <div class="key" data-key="1">1</div>
+                        <div class="key" data-key="2">2</div>
+                        <div class="key" data-key="3">3</div>
+                        <div class="key" data-key="4">4</div>
+                        <div class="key" data-key="5">5</div>
+                        <div class="key" data-key="6">6</div>
+                        <div class="key" data-key="7">7</div>
+                        <div class="key" data-key="8">8</div>
+                        <div class="key" data-key="9">9</div>
+                        <div class="key empty"></div>
+                        <div class="key" data-key="0">0</div>
+                        <div class="key delete" data-key="delete">⌫</div>
+                    </div>
+                </div>
+                
+                <div class="error-message" id="errorMessage">
+                    Incorrect Passcode
+                </div>
+            </div>
+            
+            <!-- Home Screen -->
+            <div class="home-screen" id="homeScreen">
+                <div class="status-bar">
+                    <div class="time-home" id="homeTime">12:34</div>
+                    <div class="battery">
+                        <span>100%</span>
+                        <span>🔋</span>
+                    </div>
+                </div>
+                
+                <div class="app-grid">
+                    <div class="app-icon">
+                        <div class="icon gallery">📷</div>
+                        <div class="app-name">Gallery</div>
+                    </div>
+                    <div class="app-icon">
+                        <div class="icon voice">🎵</div>
+                        <div class="app-name">Audio Memos</div>
+                    </div>
+                    <div class="app-icon">
+                        <div class="icon notes">📝</div>
+                        <div class="app-name">Notes</div>
+                    </div>
+                    <div class="app-icon">
+                        <div class="icon social">💬</div>
+                        <div class="app-name">Social Media</div>
+                    </div>
+                </div>
+                
+                <div class="dock">
+                    <div class="dock-icon phone">📞</div>
+                    <div class="dock-icon browser">🌐</div>
+                    <div class="dock-icon sms">💬</div>
+                </div>
+                
+                <div class="home-indicator"></div>
+            </div>
+
+            <!-- Gallery App -->
+            <div class="app-screen gallery-app" id="galleryApp">
+                <div class="app-header">
+                    <button class="back-btn" onclick="closeApp()">‹ Back</button>
+                    <h2>Gallery</h2>
+                </div>
+                <div class="gallery-grid" id="galleryGrid">
+                    <!-- Photos will be populated here -->
+                </div>
+            </div>
+
+            <!-- Gallery Fullscreen View -->
+            <div class="gallery-fullscreen" id="galleryFullscreen">
+                <div class="fullscreen-header">
+                    <button class="back-btn" onclick="closeFullscreen()">‹ Gallery</button>
+                    <span class="photo-counter" id="photoCounter">1 / 9</span>
+                </div>
+                <div class="fullscreen-content">
+                    <button class="nav-btn prev-btn" onclick="previousPhoto()">‹</button>
+                    <img class="fullscreen-image" id="fullscreenImage" src="" alt="">
+                    <button class="nav-btn next-btn" onclick="nextPhoto()">›</button>
+                </div>
+            </div>
+
+            <!-- Social Media App -->
+            <div class="app-screen social-app" id="socialApp">
+                <div class="social-header">
+                    <button class="back-btn" onclick="closeApp()">‹ Back</button>
+                    <h2>Social</h2>
+                    <div class="social-icons">
+                        <span class="icon-btn">💌</span>
+                    </div>
+                </div>
+                
+                <!-- Home Content -->
+                <div class="home-content" id="homeContent">
+                    <!-- Stories Section -->
+                    <div class="stories-container">
+                        <div class="stories-scroll" id="storiesScroll">
+                            <!-- Stories will be populated here -->
+                        </div>
+                    </div>
+                    
+                    <!-- Posts Feed -->
+                    <div class="posts-feed" id="postsFeed">
+                        <!-- Posts will be populated here -->
+                    </div>
+                </div>
+
+                <!-- Profile View -->
+                <div class="profile-view" id="profileView">
+                                    <div class="profile-header">
+                    <div class="profile-avatar-large" onclick="openYourStory()">
+                        <div class="profile-avatar-inner">
+                            <img src="Profiles/callum_hay_profile.png" alt="callum_hay">
+                        </div>
+                    </div>
+                    <div class="profile-info">
+                        <div class="profile-username">callum_hay</div>
+                        <div class="profile-bio">Living under the shadow of the past<br>📍 London-Antalya</div>
+                    </div>
+                </div>
+                    
+                    <div class="profile-stats">
+                        <div class="stat-item">
+                            <div class="stat-number">13</div>
+                            <div class="stat-label">Posts</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-number">1,250</div>
+                            <div class="stat-label">Followers</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-number">157</div>
+                            <div class="stat-label">Following</div>
+                        </div>
+                    </div>
+                    
+                    <div class="profile-actions">
+                        <button class="profile-btn">Edit Profile</button>
+                        <button class="profile-btn">Share Profile</button>
+                    </div>
+                    
+                    <div class="profile-posts-grid">
+                        <!-- Profile posts will be populated here -->
+                    </div>
+                </div>
+                
+                <!-- Bottom Navigation -->
+                <div class="social-bottom-nav">
+                    <div class="nav-item active" data-tab="home">
+                        <span class="nav-icon">🏠</span>
+                        <span class="nav-label">Home</span>
+                    </div>
+                    <div class="nav-item" data-tab="search">
+                        <span class="nav-icon">🔍</span>
+                        <span class="nav-label">Search</span>
+                    </div>
+                    <div class="nav-item" data-tab="reels">
+                        <span class="nav-icon">📹</span>
+                        <span class="nav-label">Reels</span>
+                    </div>
+                    <div class="nav-item" data-tab="shop">
+                        <span class="nav-icon">🛍️</span>
+                        <span class="nav-label">Shop</span>
+                    </div>
+                    <div class="nav-item" data-tab="profile">
+                        <span class="nav-icon">👤</span>
+                        <span class="nav-label">Profile</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Story Modal -->
+            <div class="story-modal" id="storyModal">
+                <div class="story-progress-bar">
+                    <div class="story-progress-fill" id="storyProgressFill"></div>
+                </div>
+                <div class="story-header">
+                    <div class="story-avatar-small" id="storyModalAvatar">
+                        👤
+                    </div>
+                    <div class="story-username-header" id="storyModalUsername">Username</div>
+                </div>
+                <div class="story-content">
+                    <img class="story-image" id="storyModalImage" src="" alt="">
+                </div>
+                <button class="story-close-btn" onclick="closeStoryModal()">×</button>
+            </div>
+
+            <!-- Post Detail View -->
+            <div class="post-detail-modal" id="postDetailModal">
+                <div class="post-detail-header">
+                    <button class="back-btn" onclick="closePostDetail()">‹ Back</button>
+                    <h2>Post</h2>
+                </div>
+                <div class="post-detail-content">
+                    <div class="post-detail-image-container">
+                        <img class="post-detail-image" id="postDetailImage" src="" alt="">
+                    </div>
+                    <div class="post-detail-info">
+                        <div class="post-detail-user">
+                            <div class="post-detail-avatar">
+                                <img src="Profiles/callum_hay_profile.png" alt="callum_hay">
+                            </div>
+                            <span class="post-detail-username">callum_hay</span>
+                        </div>
+                        <div class="post-detail-actions">
+                            <div class="post-detail-actions-left">
+                                <span class="action-btn like-btn-detail" id="likeButtonDetail">🤍</span>
+                                <span class="action-btn">💬</span>
+                                <span class="action-btn">📤</span>
+                            </div>
+                            <span class="action-btn">🔖</span>
+                        </div>
+                        <div class="post-detail-likes" id="postDetailLikes">0 likes</div>
+                        <div class="post-detail-caption">
+                            <span class="post-detail-caption-username">callum_hay</span>
+                            <span id="postDetailCaptionText"></span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Audio Memos App -->
+            <div class="app-screen audio-app" id="audioApp">
+                                 <div class="app-header">
+                     <button class="back-btn" onclick="closeApp()">‹</button>
+                     <h2>Audio Memos</h2>
+                 </div>
+                
+                <!-- Audio Player Interface -->
+                <div class="audio-player">
+                    <!-- Track Info -->
+                    <div class="track-info">
+                        <div class="track-title" id="currentTrackTitle">Select a track</div>
+                        <div class="track-artist" id="currentTrackArtist">No track selected</div>
+                    </div>
+                    
+                    <!-- Progress Section -->
+                    <div class="progress-section">
+                        <div class="time-display">
+                            <span class="current-time" id="currentTime">0:00</span>
+                            <span class="total-time" id="totalTime">0:00</span>
+                        </div>
+                        <div class="progress-bar-container">
+                            <div class="progress-bar" id="progressBar">
+                                <div class="progress-fill" id="progressFill"></div>
+                                <div class="progress-handle" id="progressHandle"></div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Controls and Volume -->
+                    <div class="controls-volume-section">
+                                                 <div class="audio-controls">
+                             <button class="control-btn" id="prevBtn">⏪</button>
+                             <button class="control-btn play-pause" id="playPauseBtn">▶</button>
+                             <button class="control-btn" id="nextBtn">⏩</button>
+                         </div>
+                        
+                        <div class="volume-control">
+                            <div class="volume-bar" id="volumeBar">
+                                <div class="volume-fill" id="volumeFill"></div>
+                                <div class="volume-handle" id="volumeHandle"></div>
+                            </div>
+                                                         <div class="volume-icon">♪</div>
+                        </div>
+                    </div>
+                    
+                    <!-- Track List -->
+                    <div class="track-list-container">
+                        <div class="track-list-header">Playlist</div>
+                        <div class="track-list" id="trackList">
+                            <!-- Tracks will be populated here -->
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Hidden Audio Element -->
+                <audio id="audioPlayer" preload="metadata"></audio>
+            </div>
+
+            <!-- Notes App -->
+            <div class="app-screen notes-app" id="notesApp">
+                <!-- Notes List View -->
+                <div class="notes-view" id="notesListView">
+                    <div class="app-header">
+                        <button class="back-btn" onclick="closeApp()">‹ Back</button>
+                        <h2>Notes</h2>
+                    </div>
+                    <div class="notes-list" id="notesList">
+                        <!-- Notes will be populated here -->
+                    </div>
+                </div>
+
+                <!-- Note Detail View -->
+                <div class="notes-view note-detail-view" id="noteDetailView">
+                    <div class="app-header">
+                        <button class="back-btn" onclick="backToNotes()">‹ Notes</button>
+                        <h2 id="noteTitle"></h2>
+                    </div>
+                    <div class="note-content" id="noteContent">
+                        <!-- Note content will be shown here -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let passcode = '';
+        const correctPasscode = '2106';
+        const dots = document.querySelectorAll('.dot');
+        const lockScreen = document.getElementById('lockScreen');
+        const homeScreen = document.getElementById('homeScreen');
+        const errorMessage = document.getElementById('errorMessage');
+
+        // Custom time tracking
+        let customTime = null;
+        let lastUpdateTime = null;
+
+        // Initialize custom time to 13:30
+        function initializeCustomTime() {
+            const now = new Date();
+            customTime = new Date(now);
+            customTime.setHours(13, 30, 0, 0);
+            lastUpdateTime = now;
+        }
+
+        // Update time display
+        function updateTime() {
+            if (!customTime) {
+                initializeCustomTime();
+            }
+
+            const now = new Date();
+            if (lastUpdateTime) {
+                const timeDiff = now - lastUpdateTime;
+                customTime = new Date(customTime.getTime() + timeDiff);
+            }
+            lastUpdateTime = now;
+
+            const timeString = customTime.toLocaleTimeString('en-US', { 
+                hour: '2-digit', 
+                minute: '2-digit',
+                hour12: false 
+            });
+            
+            // Fixed date: 18 Ağustos 2023
+            const dateString = "18 Ağustos 2023";
+            
+            document.getElementById('timeDisplay').textContent = timeString;
+            document.getElementById('homeTime').textContent = timeString;
+            document.getElementById('dateDisplay').textContent = dateString;
+        }
+
+        // Initialize time and update every minute
+        updateTime();
+        setInterval(updateTime, 60000);
+
+        // Handle keypad input
+        document.querySelectorAll('.key').forEach(key => {
+            key.addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                
+                const keyValue = key.getAttribute('data-key');
+                
+                // Skip empty keys
+                if (key.classList.contains('empty')) {
+                    return;
+                }
+                
+                if (keyValue === 'delete') {
+                    if (passcode.length > 0) {
+                        passcode = passcode.slice(0, -1);
+                        updateDots();
+                    }
+                } else if (keyValue && passcode.length < 4) {
+                    passcode += keyValue;
+                    updateDots();
+                    
+                    if (passcode.length === 4) {
+                        setTimeout(() => {
+                            checkPasscode();
+                        }, 200);
+                    }
+                }
+            });
+        });
+
+        // Update passcode dots
+        function updateDots() {
+            dots.forEach((dot, index) => {
+                if (index < passcode.length) {
+                    dot.classList.add('filled');
+                } else {
+                    dot.classList.remove('filled');
+                }
+            });
+        }
+
+        // Check passcode
+        function checkPasscode() {
+            if (passcode === correctPasscode) {
+                // Correct passcode - unlock
+                setTimeout(() => {
+                    lockScreen.classList.add('hidden');
+                    homeScreen.classList.add('active');
+                }, 300);
+            } else {
+                // Wrong passcode - show error and shake
+                showError();
+                shakeScreen();
+                resetPasscode();
+            }
+        }
+
+        // Show error message
+        function showError() {
+            errorMessage.classList.add('show');
+            setTimeout(() => {
+                errorMessage.classList.remove('show');
+            }, 2000);
+        }
+
+        // Shake animation
+        function shakeScreen() {
+            lockScreen.classList.add('shake');
+            setTimeout(() => {
+                lockScreen.classList.remove('shake');
+            }, 500);
+        }
+
+        // Reset passcode
+        function resetPasscode() {
+            passcode = '';
+            setTimeout(() => {
+                updateDots();
+            }, 500);
+        }
+
+        // Social Media data
+        const socialStories = [
+            { username: 'Your Story', avatar: 'Stories/YourStory.png', isOwn: true, storyImage: 'Stories/YourStory.png' },
+            { username: 'Rachel', avatar: 'Stories/Rachel_Story.jpeg', storyImage: 'Stories/Rachel_Story.jpeg' },
+            { username: 'Noah', avatar: 'Stories/Noah_Story.jpeg', storyImage: 'Stories/Noah_Story.jpeg' },
+            { username: 'Sarah', avatar: '👩‍🎨' },
+            { username: 'Mike', avatar: '👨‍🔬' },
+            { username: 'Lisa', avatar: '👩‍🏫' },
+            { username: 'Tom', avatar: '👨‍🎭' }
+        ];
+
+        const socialPosts = [
+            {
+                id: 1,
+                username: 'jadey_shares',
+                avatar: 'Profiles/jadey_shares_profile.png',
+                time: '2h',
+                image: 'FeedPosts/FeedPost1.png',
+                likes: 125899,
+                caption: 'Am I happy to be in Paris? Oui!',
+                isLiked: true,
+                comments: [
+                    { username: 'callum_hay', text: 'Living the dream 🗼' }
+                ]
+            },
+            {
+                id: 2,
+                username: 'no.ah_photography',
+                avatar: 'Profiles/no.ah_photography_profile.png',
+                time: '5h',
+                image: 'FeedPosts/FeedPost2.jpeg',
+                likes: 17345,
+                caption: 'Morning shines.',
+                isLiked: true,
+                comments: [
+                    { username: 'callum_hay', text: 'Feels so peaceful 😌' }
+                ]
+            },
+            {
+                id: 3,
+                username: 'callum_hay',
+                avatar: 'Profiles/callum_hay_profile.png',
+                time: '1d',
+                image: 'FeedPosts/FeedPost3.jpeg',
+                likes: 234,
+                caption: 'Solving the mystery 🕵️',
+                isLiked: false,
+                comments: []
+            },
+            {
+                id: 4,
+                username: 'self.healing__energy__',
+                avatar: '🧘‍♀️',
+                time: '2d',
+                image: 'FeedPosts/FeedPost4.png',
+                likes: 2973,
+                caption: 'Time can\'t cover what memory waters.',
+                isLiked: true,
+                comments: []
+            }
+        ];
+
+        // Social Media functions
+        function openSocialApp() {
+            currentApp = 'social';
+            document.getElementById('homeScreen').classList.remove('active');
+            document.getElementById('socialApp').classList.add('active');
+            loadSocialContent();
+        }
+
+        function loadSocialContent() {
+            loadStories();
+            loadPosts();
+            loadProfilePosts();
+            setupBottomNavigation();
+        }
+
+        const profilePostsData = [
+            { image: 'Posts/Post1.png', caption: 'Golden hour doesn\'t forgive — it just flatters.', likes: 87 },
+            { image: 'Posts/Post2.jpeg', caption: 'From London to Antalya to collect more beautiful memories.', likes: 134 },
+            { image: 'Posts/Post3.png', caption: 'The best nights always blur around the edges.', likes: 92 },
+            { image: 'Posts/Post4.png', caption: 'Some things don\'t die. They just wait.', likes: 156 },
+            { image: 'Posts/Post5.png', caption: 'Still here. Still pretending it\'s enough.', likes: 73 },
+            { image: 'Posts/Post6.jpeg', caption: 'Forgiveness sounds a lot like the sea — it comes in waves, but never stays.', likes: 201 },
+            { image: 'Posts/Post7.jpeg', caption: 'Beautiful Istanbul', likes: 289 },
+            { image: 'Posts/Post8.jpeg', caption: 'SushiDate with myself :)', likes: 112 },
+            { image: 'Posts/Post9.jpeg', caption: 'Not going back. Just passing by.', likes: 67 },
+            { image: 'Posts/Post10.png', caption: 'Some secrets are so old, they forget how to stay buried.', likes: 143 },
+            { image: 'Posts/Post11.jpeg', caption: 'The Swing', likes: 95 },
+            { image: 'Posts/Post12.jpeg', caption: 'I used to think the stars were watching. Now I hope they weren\'t.', likes: 178 },
+            { image: 'Posts/Post13.jpeg', caption: 'Solving the mystery 🕵️', likes: 234 }
+        ];
+
+        function loadProfilePosts() {
+            const profileGrid = document.querySelector('.profile-posts-grid');
+            profileGrid.innerHTML = '';
+
+            // Show posts from newest to oldest (Post13 to Post1)
+            const reversedPosts = [...profilePostsData].reverse();
+            
+            reversedPosts.forEach((post, index) => {
+                const postItem = document.createElement('div');
+                postItem.className = 'profile-post-item';
+                postItem.style.backgroundImage = `url('${post.image}')`;
+                postItem.style.backgroundSize = 'cover';
+                postItem.style.backgroundPosition = 'center';
+                postItem.addEventListener('click', () => {
+                    openFullPost(profilePostsData.length - 1 - index);
+                });
+                profileGrid.appendChild(postItem);
+            });
+
+            // Add event listeners to profile buttons
+            document.querySelectorAll('.profile-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const btnText = e.target.textContent;
+                    if (btnText === 'Edit Profile') {
+                        console.log('Edit Profile clicked');
+                    } else if (btnText === 'Share Profile') {
+                        console.log('Share Profile clicked');
+                    }
+                });
+            });
+        }
+
+        let currentPostIndex = 0;
+        let postLiked = false;
+
+        function openFullPost(index) {
+            currentPostIndex = index;
+            const post = profilePostsData[index];
+            postLiked = false; // Reset like state
+            
+            // Update modal content
+            document.getElementById('postDetailImage').src = post.image;
+            document.getElementById('postDetailLikes').textContent = `${post.likes} likes`;
+            document.getElementById('postDetailCaptionText').textContent = post.caption;
+            document.getElementById('likeButtonDetail').textContent = '🤍';
+            document.getElementById('likeButtonDetail').classList.remove('liked');
+            
+            // Show modal
+            document.getElementById('postDetailModal').classList.add('active');
+            
+            // Add like functionality
+            const likeBtn = document.getElementById('likeButtonDetail');
+            likeBtn.onclick = () => togglePostLike();
+        }
+
+
+
+        function togglePostLike() {
+            const post = profilePostsData[currentPostIndex];
+            const likeBtn = document.getElementById('likeButtonDetail');
+            const likesDisplay = document.getElementById('postDetailLikes');
+            
+            postLiked = !postLiked;
+            
+            if (postLiked) {
+                likeBtn.textContent = '❤️';
+                likeBtn.classList.add('liked');
+                likesDisplay.textContent = `${post.likes + 1} likes`;
+            } else {
+                likeBtn.textContent = '🤍';
+                likeBtn.classList.remove('liked');
+                likesDisplay.textContent = `${post.likes} likes`;
+            }
+            
+            // Add animation
+            likeBtn.style.transform = 'scale(1.3)';
+            setTimeout(() => {
+                likeBtn.style.transform = 'scale(1)';
+            }, 200);
+        }
+
+        // Make function global for HTML onclick
+        window.closePostDetail = function() {
+            document.getElementById('postDetailModal').classList.remove('active');
+        }
+
+        // Story Modal Functions
+        let storyProgressInterval;
+        
+        function openStoryModal(story) {
+            const modal = document.getElementById('storyModal');
+            const avatar = document.getElementById('storyModalAvatar');
+            const username = document.getElementById('storyModalUsername');
+            const image = document.getElementById('storyModalImage');
+            const progressFill = document.getElementById('storyProgressFill');
+            
+            // Set content
+            const avatarHTML = story.avatar.includes('.png') || story.avatar.includes('.jpg') || story.avatar.includes('.jpeg') 
+                ? `<img src="${story.avatar}" alt="${story.username}">` 
+                : story.avatar;
+            avatar.innerHTML = avatarHTML;
+            username.textContent = story.username;
+            image.src = story.storyImage;
+            
+            // Reset and start progress
+            progressFill.style.width = '0%';
+            modal.classList.add('active');
+            
+            // Animate progress bar (5 seconds)
+            let progress = 0;
+            storyProgressInterval = setInterval(() => {
+                progress += 2;
+                progressFill.style.width = progress + '%';
+                if (progress >= 100) {
+                    closeStoryModal();
+                }
+            }, 100);
+        }
+        
+        window.closeStoryModal = function() {
+            const modal = document.getElementById('storyModal');
+            modal.classList.remove('active');
+            if (storyProgressInterval) {
+                clearInterval(storyProgressInterval);
+                storyProgressInterval = null;
+            }
+        }
+
+        // Open Your Story from profile
+        window.openYourStory = function() {
+            const yourStory = socialStories.find(story => story.username === 'Your Story');
+            if (yourStory && yourStory.storyImage) {
+                openStoryModal(yourStory);
+            }
+        }
+
+        function setupBottomNavigation() {
+            document.querySelectorAll('.nav-item').forEach(item => {
+                item.addEventListener('click', (e) => {
+                    const tab = e.currentTarget.getAttribute('data-tab');
+                    switchTab(tab);
+                });
+            });
+        }
+
+        function switchTab(tabName) {
+            // Remove active from all nav items
+            document.querySelectorAll('.nav-item').forEach(item => {
+                item.classList.remove('active');
+            });
+            
+            // Add active to clicked nav item
+            const activeTab = document.querySelector(`[data-tab="${tabName}"]`);
+            if (activeTab) {
+                activeTab.classList.add('active');
+            }
+            
+            // Handle different tabs
+            const homeContent = document.getElementById('homeContent');
+            const profileView = document.getElementById('profileView');
+            
+            switch(tabName) {
+                case 'home':
+                    homeContent.classList.remove('hidden');
+                    profileView.classList.remove('active');
+                    break;
+                case 'profile':
+                    homeContent.classList.add('hidden');
+                    profileView.classList.add('active');
+                    break;
+                case 'search':
+                    console.log('Search tab activated - Coming soon!');
+                    // Reset to home view for placeholder tabs
+                    homeContent.classList.remove('hidden');
+                    profileView.classList.remove('active');
+                    break;
+                case 'reels':
+                    console.log('Reels tab activated - Coming soon!');
+                    // Reset to home view for placeholder tabs
+                    homeContent.classList.remove('hidden');
+                    profileView.classList.remove('active');
+                    break;
+                case 'shop':
+                    console.log('Shop tab activated - Coming soon!');
+                    // Reset to home view for placeholder tabs
+                    homeContent.classList.remove('hidden');
+                    profileView.classList.remove('active');
+                    break;
+            }
+        }
+
+        function loadStories() {
+            const storiesContainer = document.getElementById('storiesScroll');
+            storiesContainer.innerHTML = '';
+
+            socialStories.forEach((story, index) => {
+                const storyItem = document.createElement('div');
+                storyItem.className = 'story-item';
+                
+                // Handle avatar - if it's an image path, create img tag, otherwise use as emoji
+                const avatarHTML = story.avatar.includes('.png') || story.avatar.includes('.jpg') || story.avatar.includes('.jpeg') 
+                    ? `<img src="${story.avatar}" alt="${story.username}">` 
+                    : story.avatar;
+                
+                storyItem.innerHTML = `
+                    <div class="story-avatar">
+                        <div class="story-avatar-inner">${avatarHTML}</div>
+                    </div>
+                    <div class="story-username">${story.username}</div>
+                `;
+                storyItem.addEventListener('click', () => {
+                    if (story.storyImage) {
+                        openStoryModal(story);
+                    }
+                });
+                storiesContainer.appendChild(storyItem);
+            });
+        }
+
+        function loadPosts() {
+            const postsContainer = document.getElementById('postsFeed');
+            postsContainer.innerHTML = '';
+
+            socialPosts.forEach(post => {
+                const postElement = document.createElement('div');
+                postElement.className = 'post';
+                
+                // Create comments HTML
+                let commentsHTML = '';
+                if (post.comments && post.comments.length > 0) {
+                    commentsHTML = '<div class="post-comments">';
+                    post.comments.forEach(comment => {
+                        commentsHTML += `
+                            <div class="post-comment">
+                                <span class="post-comment-username">${comment.username}</span>${comment.text}
+                            </div>
+                        `;
+                    });
+                    commentsHTML += '</div>';
+                }
+                
+                // Handle avatar - if it's an image path, create img tag, otherwise use as emoji
+                const avatarHTML = post.avatar.includes('.png') || post.avatar.includes('.jpg') || post.avatar.includes('.jpeg') 
+                    ? `<img src="${post.avatar}" alt="${post.username}">` 
+                    : post.avatar;
+                
+                postElement.innerHTML = `
+                    <div class="post-header">
+                        <div class="post-avatar">${avatarHTML}</div>
+                        <div class="post-user-info">
+                            <div class="post-username">${post.username}</div>
+                        </div>
+                        <div class="post-menu">⋯</div>
+                    </div>
+                    <img class="post-image" src="${post.image}" alt="Post image" style="width: 100%; aspect-ratio: 1; object-fit: cover;">
+                    <div class="post-actions">
+                        <div class="post-actions-left">
+                            <span class="action-btn like-btn ${post.isLiked ? 'liked' : ''}" data-post-id="${post.id}">${post.isLiked ? '❤️' : '🤍'}</span>
+                            <span class="action-btn">💬</span>
+                            <span class="action-btn">📤</span>
+                        </div>
+                        <span class="action-btn">🔖</span>
+                    </div>
+                    <div class="post-likes">${post.likes.toLocaleString()} likes</div>
+                    <div class="post-caption">
+                        <span class="post-caption-username">${post.username}</span>${post.caption}
+                    </div>
+                    ${commentsHTML}
+                `;
+                postsContainer.appendChild(postElement);
+            });
+
+            // Add like functionality
+            document.querySelectorAll('.like-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const postId = parseInt(e.target.getAttribute('data-post-id'));
+                    toggleLike(postId, e.target);
+                });
+            });
+        }
+
+        function toggleLike(postId, element) {
+            const post = socialPosts.find(p => p.id === postId);
+            if (post) {
+                post.isLiked = !post.isLiked;
+                post.likes += post.isLiked ? 1 : -1;
+                
+                element.textContent = post.isLiked ? '❤️' : '🤍';
+                element.classList.toggle('liked', post.isLiked);
+                
+                // Update likes count
+                const postElement = element.closest('.post');
+                const likesElement = postElement.querySelector('.post-likes');
+                likesElement.textContent = `${post.likes.toLocaleString()} likes`;
+                
+                // Add animation
+                element.style.transform = 'scale(1.3)';
+                setTimeout(() => {
+                    element.style.transform = 'scale(1)';
+                }, 200);
+            }
+        }
+
+        // Audio Memos data
+        const audioTracks = [
+            {
+                id: 1,
+                title: "Golden Hour",
+                artist: "Audio Memo",
+                file: "Audio/1) Golden Hour.mp3",
+                duration: "..."
+            },
+            {
+                id: 2,
+                title: "The Splash",
+                artist: "Audio Memo",
+                file: "Audio/2) The Splash.mp3",
+                duration: "..."
+            },
+            {
+                id: 3,
+                title: "The Joke",
+                artist: "Audio Memo",
+                file: "Audio/3) The Joke.mp3",
+                duration: "..."
+            },
+            {
+                id: 4,
+                title: "Dreams",
+                artist: "Audio Memo",
+                file: "Audio/4) Dreams.mp3",
+                duration: "..."
+            },
+            {
+                id: 5,
+                title: "Ten Years",
+                artist: "Audio Memo",
+                file: "Audio/5) Ten Years.mp3",
+                duration: "..."
+            },
+            {
+                id: 6,
+                title: "Frozen Key",
+                artist: "Audio Memo",
+                file: "Audio/6) Frozen Key.mp3",
+                duration: "..."
+            }
+        ];
+
+        let currentTrackIndex = 0;
+        let isPlaying = false;
+        let audioPlayer = null;
+        let currentVolume = 0.7;
+        let isDragging = false;
+
+        // Audio Player Functions
+        function openAudioApp() {
+            currentApp = 'audio';
+            document.getElementById('homeScreen').classList.remove('active');
+            document.getElementById('audioApp').classList.add('active');
+            initializeAudioPlayer();
+        }
+
+        function initializeAudioPlayer() {
+            audioPlayer = document.getElementById('audioPlayer');
+            loadTrackList();
+            setVolume(currentVolume);
+            setupAudioEventListeners();
+            setupControlEventListeners();
+            
+            // Load real durations for all tracks
+            loadAllTrackDurations();
+            
+            // Load first track but don't play
+            if (audioTracks.length > 0) {
+                loadTrack(0);
+            }
+        }
+
+        // Function to load real durations for all tracks
+        function loadAllTrackDurations() {
+            audioTracks.forEach((track, index) => {
+                const tempAudio = new Audio();
+                tempAudio.addEventListener('loadedmetadata', () => {
+                    track.duration = formatTime(tempAudio.duration);
+                    updateTrackDurationInList(index, track.duration);
+                });
+                tempAudio.addEventListener('error', () => {
+                    track.duration = "Error";
+                    updateTrackDurationInList(index, track.duration);
+                });
+                tempAudio.src = track.file;
+            });
+        }
+
+        // Function to update duration in the track list
+        function updateTrackDurationInList(trackIndex, duration) {
+            const trackItems = document.querySelectorAll('.track-item');
+            if (trackItems[trackIndex]) {
+                const durationElement = trackItems[trackIndex].querySelector('.track-duration');
+                if (durationElement) {
+                    durationElement.textContent = duration;
+                }
+            }
+        }
+
+        function loadTrackList() {
+            const trackList = document.getElementById('trackList');
+            trackList.innerHTML = '';
+
+            audioTracks.forEach((track, index) => {
+                const trackItem = document.createElement('div');
+                trackItem.className = 'track-item';
+                trackItem.innerHTML = `
+                    <div class="track-name">${track.title}</div>
+                    <div class="track-duration">${track.duration}</div>
+                `;
+                trackItem.addEventListener('click', () => {
+                    selectTrack(index);
+                });
+                trackList.appendChild(trackItem);
+            });
+        }
+
+        function loadTrack(index) {
+            if (index < 0 || index >= audioTracks.length) return;
+            
+            currentTrackIndex = index;
+            const track = audioTracks[index];
+            
+            // Update UI
+            document.getElementById('currentTrackTitle').textContent = track.title;
+            document.getElementById('currentTrackArtist').textContent = track.artist;
+            
+            // Update track list highlighting
+            document.querySelectorAll('.track-item').forEach((item, i) => {
+                item.classList.toggle('active', i === index);
+                item.classList.remove('playing');
+            });
+            
+            // Load audio
+            audioPlayer.src = track.file;
+            resetProgressBar();
+        }
+
+        function selectTrack(index) {
+            if (isPlaying) {
+                stopAudio();
+            }
+            loadTrack(index);
+        }
+
+        function playAudio() {
+            if (!audioPlayer.src) return;
+            
+            audioPlayer.play().then(() => {
+                isPlaying = true;
+                document.getElementById('playPauseBtn').textContent = '⏸';
+                document.querySelectorAll('.track-item')[currentTrackIndex].classList.add('playing');
+            }).catch(e => {
+                console.log('Audio play failed:', e);
+            });
+        }
+
+        function pauseAudio() {
+            audioPlayer.pause();
+            isPlaying = false;
+            document.getElementById('playPauseBtn').textContent = '▶';
+            document.querySelectorAll('.track-item')[currentTrackIndex].classList.remove('playing');
+        }
+
+        function stopAudio() {
+            audioPlayer.pause();
+            audioPlayer.currentTime = 0;
+            isPlaying = false;
+            document.getElementById('playPauseBtn').textContent = '▶';
+            document.querySelectorAll('.track-item').forEach(item => {
+                item.classList.remove('playing');
+            });
+            resetProgressBar();
+        }
+
+        function togglePlayPause() {
+            if (isPlaying) {
+                pauseAudio();
+            } else {
+                playAudio();
+            }
+        }
+
+        function nextTrack() {
+            const nextIndex = (currentTrackIndex + 1) % audioTracks.length;
+            loadTrack(nextIndex);
+            if (isPlaying) {
+                playAudio();
+            }
+        }
+
+        function previousTrack() {
+            const prevIndex = currentTrackIndex === 0 ? audioTracks.length - 1 : currentTrackIndex - 1;
+            loadTrack(prevIndex);
+            if (isPlaying) {
+                playAudio();
+            }
+        }
+
+        function setVolume(volume) {
+            currentVolume = Math.max(0, Math.min(1, volume));
+            if (audioPlayer) {
+                audioPlayer.volume = currentVolume;
+            }
+            updateVolumeDisplay();
+        }
+
+        function updateVolumeDisplay() {
+            const volumeFill = document.getElementById('volumeFill');
+            const volumeHandle = document.getElementById('volumeHandle');
+            
+            const percentage = currentVolume * 100;
+            volumeFill.style.height = percentage + '%';
+            volumeHandle.style.top = (100 - percentage) + '%';
+        }
+
+        function formatTime(seconds) {
+            const mins = Math.floor(seconds / 60);
+            const secs = Math.floor(seconds % 60);
+            return `${mins}:${secs.toString().padStart(2, '0')}`;
+        }
+
+        function updateProgressBar() {
+            if (!audioPlayer || !audioPlayer.duration || isDragging) return;
+            
+            const progress = (audioPlayer.currentTime / audioPlayer.duration) * 100;
+            const progressFill = document.getElementById('progressFill');
+            const progressHandle = document.getElementById('progressHandle');
+            
+            progressFill.style.width = progress + '%';
+            progressHandle.style.left = progress + '%';
+            
+            document.getElementById('currentTime').textContent = formatTime(audioPlayer.currentTime);
+            document.getElementById('totalTime').textContent = formatTime(audioPlayer.duration);
+        }
+
+        function resetProgressBar() {
+            const progressFill = document.getElementById('progressFill');
+            const progressHandle = document.getElementById('progressHandle');
+            
+            progressFill.style.width = '0%';
+            progressHandle.style.left = '0%';
+            
+            document.getElementById('currentTime').textContent = '0:00';
+            document.getElementById('totalTime').textContent = '0:00';
+        }
+
+        function setupAudioEventListeners() {
+            audioPlayer.addEventListener('timeupdate', updateProgressBar);
+            
+            audioPlayer.addEventListener('ended', () => {
+                nextTrack();
+                if (isPlaying) {
+                    playAudio();
+                }
+            });
+            
+            audioPlayer.addEventListener('loadedmetadata', () => {
+                document.getElementById('totalTime').textContent = formatTime(audioPlayer.duration);
+            });
+        }
+
+        function setupControlEventListeners() {
+            // Play/Pause button
+            document.getElementById('playPauseBtn').addEventListener('click', togglePlayPause);
+            
+            // Previous/Next buttons
+            document.getElementById('prevBtn').addEventListener('click', previousTrack);
+            document.getElementById('nextBtn').addEventListener('click', nextTrack);
+            
+            // Progress bar click
+            const progressBar = document.getElementById('progressBar');
+            progressBar.addEventListener('click', (e) => {
+                if (!audioPlayer.duration) return;
+                
+                const rect = progressBar.getBoundingClientRect();
+                const clickX = e.clientX - rect.left;
+                const percentage = clickX / rect.width;
+                
+                audioPlayer.currentTime = percentage * audioPlayer.duration;
+                updateProgressBar();
+            });
+            
+            // Volume bar click
+            const volumeBar = document.getElementById('volumeBar');
+            volumeBar.addEventListener('click', (e) => {
+                const rect = volumeBar.getBoundingClientRect();
+                const clickY = e.clientY - rect.top;
+                const percentage = 1 - (clickY / rect.height);
+                
+                setVolume(percentage);
+            });
+        }
+
+        // Gallery data
+        const galleryPhotos = [
+            'Gallery/telefonwp.png',
+            'Gallery/Villa7.png',
+            'Gallery/Villa3.png',
+            'Gallery/Villa2.png',
+            'Gallery/Samantha1.png',
+            'Gallery/Noah1.png',
+            'Gallery/Rachel1.png',
+            'Gallery/Callum1.png',
+            'Gallery/Jade and Ethan.png'
+        ];
+
+        let currentPhotoIndex = 0;
+
+        // Gallery functions
+        function openGalleryApp() {
+            currentApp = 'gallery';
+            document.getElementById('homeScreen').classList.remove('active');
+            document.getElementById('galleryApp').classList.add('active');
+            loadGallery();
+        }
+
+        function loadGallery() {
+            const galleryGrid = document.getElementById('galleryGrid');
+            galleryGrid.innerHTML = '';
+
+            galleryPhotos.forEach((photo, index) => {
+                const galleryItem = document.createElement('div');
+                galleryItem.className = 'gallery-item';
+                galleryItem.innerHTML = `
+                    <img class="gallery-thumbnail" src="${photo}" alt="Photo ${index + 1}">
+                `;
+                galleryItem.addEventListener('click', () => openPhoto(index));
+                galleryGrid.appendChild(galleryItem);
+            });
+        }
+
+        function openPhoto(index) {
+            currentPhotoIndex = index;
+            const fullscreenImage = document.getElementById('fullscreenImage');
+            fullscreenImage.src = galleryPhotos[index];
+            document.getElementById('galleryFullscreen').classList.add('active');
+            updatePhotoCounter();
+            updateNavigationButtons();
+        }
+
+        function updatePhotoCounter() {
+            const counter = document.getElementById('photoCounter');
+            counter.textContent = `${currentPhotoIndex + 1} / ${galleryPhotos.length}`;
+        }
+
+        function updateNavigationButtons() {
+            const prevBtn = document.querySelector('.prev-btn');
+            const nextBtn = document.querySelector('.next-btn');
+            
+            prevBtn.disabled = currentPhotoIndex === 0;
+            nextBtn.disabled = currentPhotoIndex === galleryPhotos.length - 1;
+        }
+
+        // Make gallery functions global
+        window.closeFullscreen = function() {
+            document.getElementById('galleryFullscreen').classList.remove('active');
+        }
+
+        window.nextPhoto = function() {
+            if (currentPhotoIndex < galleryPhotos.length - 1) {
+                currentPhotoIndex++;
+                const fullscreenImage = document.getElementById('fullscreenImage');
+                fullscreenImage.src = galleryPhotos[currentPhotoIndex];
+                updatePhotoCounter();
+                updateNavigationButtons();
+            }
+        }
+
+        window.previousPhoto = function() {
+            if (currentPhotoIndex > 0) {
+                currentPhotoIndex--;
+                const fullscreenImage = document.getElementById('fullscreenImage');
+                fullscreenImage.src = galleryPhotos[currentPhotoIndex];
+                updatePhotoCounter();
+                updateNavigationButtons();
+            }
+        }
+
+        // Notes data
+        const notesData = [
+            {
+                id: 1,
+                title: "Friday List – Don't forget again",
+                content: "Limes (x3)\nMint\nCharcoal\nIce (1 bag)\nZeytin? (Check with Sam)\nTonic – glass bottles, not cans",
+                date: "Dec 15"
+            },
+            {
+                id: 2,
+                title: "Wet stone",
+                content: "Still can't shake that sound.\nNot water. Not waves.\nJust that crack of slipping weight.\nThen the quiet.",
+                date: "Dec 14"
+            },
+            {
+                id: 3,
+                title: "Rachel's white adapter",
+                content: "She left it again.\nCheck bottom drawer in hallway.\nReturn before Sunday.",
+                date: "Dec 13"
+            },
+            {
+                id: 4,
+                title: "The silence was worse",
+                content: "I thought the splash would be the worst part.\nBut it was what came after.\nNo shouts. No laughter. Just…\nnothing.",
+                date: "Dec 12"
+            },
+            {
+                id: 5,
+                title: "Firmware Sync – Smart Lock",
+                content: "Update failed?\nDouble check remote PINs.\nUSB port is loose again.\nReplace cable before guests arrive.",
+                date: "Dec 11"
+            },
+            {
+                id: 6,
+                title: "That one breath",
+                content: "Not a scream.\nNot even a word.\nJust that breath he took —\nlike he realized it too late.",
+                date: "Dec 10"
+            },
+            {
+                id: 7,
+                title: "Dinner with Noah?",
+                content: "Wednesday — still possible?\nAsk about rights for old tapes.\nWould he even want to?\nDon't mention lakeside idea yet.",
+                date: "Dec 9"
+            },
+            {
+                id: 8,
+                title: "Still bleeding",
+                content: "Ten summers.\nTen damn sunsets.\nI thought time would scab it over.\nBut it keeps bleeding through.",
+                date: "Dec 8"
+            },
+            {
+                id: 9,
+                title: "Pool lights – test again",
+                content: "One flickered last night.\nNot sure if cable is exposed.\nNoah said he'd check it but forgot.\nTry at dusk.",
+                date: "Dec 7"
+            },
+            {
+                id: 10,
+                title: "He was already turning",
+                content: "I remember his back.\nI remember my voice.\nHe turned —\nand I never saw his face again.",
+                date: "Dec 6"
+            },
+            {
+                id: 11,
+                title: "Doctor U.",
+                content: "Reschedule to next week.\nMornings still bad.\nStomach tight.\nKeep forgetting names in dreams.",
+                date: "Dec 5"
+            },
+            {
+                id: 12,
+                title: "Just a prank",
+                content: "That's what we said.\nThat's what I told them.\nBut I felt it fracture\nthe second he let go.",
+                date: "Dec 4"
+            },
+            {
+                id: 13,
+                title: "Tripod?",
+                content: "Jade forgot hers — again.\nCheck old one in storage.\nIf mount's cracked, tell her before shoot.",
+                date: "Dec 3"
+            },
+            {
+                id: 14,
+                title: "If I had gone back",
+                content: "Even once.\nEven for one second.\nMaybe everything would've held.\nMaybe we wouldn't be here now.",
+                date: "Dec 2"
+            }
+        ];
+
+        // App management
+        let currentApp = null;
+
+        function openNotesApp() {
+            currentApp = 'notes';
+            document.getElementById('homeScreen').classList.remove('active');
+            document.getElementById('notesApp').classList.add('active');
+            
+            // Reset notes views
+            document.getElementById('notesListView').classList.remove('slide-left');
+            document.getElementById('noteDetailView').classList.remove('active');
+            
+            loadNotesList();
+        }
+
+        // Make functions global for HTML onclick handlers
+        window.closeApp = function() {
+            if (currentApp) {
+                if (currentApp === 'notes') {
+                    document.getElementById('notesApp').classList.remove('active');
+                    // Reset notes views
+                    document.getElementById('notesListView').classList.remove('slide-left');
+                    document.getElementById('noteDetailView').classList.remove('active');
+                } else if (currentApp === 'gallery') {
+                    document.getElementById('galleryApp').classList.remove('active');
+                    document.getElementById('galleryFullscreen').classList.remove('active');
+                } else if (currentApp === 'social') {
+                    document.getElementById('socialApp').classList.remove('active');
+                    document.getElementById('postDetailModal').classList.remove('active');
+                } else if (currentApp === 'audio') {
+                    document.getElementById('audioApp').classList.remove('active');
+                    if (audioPlayer && isPlaying) {
+                        pauseAudio();
+                    }
+                }
+                
+                document.getElementById('homeScreen').classList.add('active');
+                currentApp = null;
+            }
+        }
+
+        window.backToNotes = function() {
+            document.getElementById('notesListView').classList.remove('slide-left');
+            document.getElementById('noteDetailView').classList.remove('active');
+        }
+
+        function loadNotesList() {
+            const notesList = document.getElementById('notesList');
+            notesList.innerHTML = '';
+
+            notesData.forEach(note => {
+                const noteItem = document.createElement('div');
+                noteItem.className = 'note-item';
+                noteItem.innerHTML = `
+                    <div class="note-item-title">${note.title}</div>
+                    <div class="note-item-preview">${note.content}</div>
+                `;
+                noteItem.addEventListener('click', () => openNote(note));
+                notesList.appendChild(noteItem);
+            });
+        }
+
+        function openNote(note) {
+            document.getElementById('noteTitle').textContent = note.title;
+            document.getElementById('noteContent').textContent = note.content;
+            
+            // Slide transition within Notes app
+            document.getElementById('notesListView').classList.add('slide-left');
+            document.getElementById('noteDetailView').classList.add('active');
+        }
+
+        // App click handlers
+        document.querySelectorAll('.app-icon, .dock-icon').forEach(icon => {
+            icon.addEventListener('click', () => {
+                const appName = icon.querySelector('.app-name')?.textContent;
+                if (appName === 'Notes') {
+                    openNotesApp();
+                } else if (appName === 'Gallery') {
+                    openGalleryApp();
+                } else if (appName === 'Social Media') {
+                    openSocialApp();
+                } else if (appName === 'Audio Memos') {
+                    openAudioApp();
+                } else {
+                    console.log('App clicked:', appName || 'Dock app');
+                }
+            });
+        });
+
+        // Add vibration effect on key press (if supported)
+        document.querySelectorAll('.key').forEach(key => {
+            key.addEventListener('click', () => {
+                if ('vibrate' in navigator) {
+                    navigator.vibrate(50);
+                }
+            });
+        });
+
+        // Keyboard navigation for gallery
+        document.addEventListener('keydown', (e) => {
+            const fullscreen = document.getElementById('galleryFullscreen');
+            if (fullscreen.classList.contains('active')) {
+                if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
+                    e.preventDefault();
+                    if (e.key === 'ArrowLeft') {
+                        window.previousPhoto();
+                    } else {
+                        window.nextPhoto();
+                    }
+                } else if (e.key === 'Escape') {
+                    window.closeFullscreen();
+                }
+            }
+        });
+
+
+    </script>
+</body>
+</html>
